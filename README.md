@@ -21,7 +21,7 @@ Argparse
 Installation
 Clone the repository:
 
-git clone https://github.com/yourusername/network-port-scanner.git
+git clone (https://github.com/fatemazohora877-hash/network-port-scanner)
 cd network-port-scanner
 Usage
 Scan a target using the default port range:
