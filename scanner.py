@@ -1,14 +1,16 @@
 import socket
+import csv
 import time
 from concurrent.futures import ThreadPoolExecutor
 
+# Get target from user
 target = input("Enter IP Address or Hostname: ")
 
 # Resolve hostname
 try:
     ip = socket.gethostbyname(target)
 except socket.gaierror:
-    print("Error: Unable to resolve hostname.")
+    print("Error: Could not resolve hostname.")
     exit()
 
 print("-" * 60)
@@ -60,7 +62,7 @@ def scan_port(port):
             print(f"    Service: {service}")
             print(f"    Banner : {banner[:100]}")
 
-            open_ports.append((port, service))
+            open_ports.append([port, service, banner[:100]])
 
     except:
         pass
@@ -69,8 +71,19 @@ def scan_port(port):
         sock.close()
 
 
+# Scan ports 1-1000 using multithreading
 with ThreadPoolExecutor(max_workers=100) as executor:
     executor.map(scan_port, range(1, 1001))
+
+
+# Export results to CSV
+with open("scan_results.csv", "w", newline="", encoding="utf-8") as file:
+    writer = csv.writer(file)
+
+    writer.writerow(["Port", "Service", "Banner"])
+
+    for port_data in sorted(open_ports):
+        writer.writerow(port_data)
 
 end_time = time.time()
 
@@ -78,14 +91,11 @@ print("\n" + "-" * 60)
 print("SCAN COMPLETE")
 print("-" * 60)
 
-if open_ports:
-    print("\nOpen Ports Found:")
-
-    for port, service in sorted(open_ports):
-        print(f"Port {port:<5} -> {service}")
-
-else:
-    print("No open ports found.")
-
-print(f"\nTotal Open Ports: {len(open_ports)}")
+print(f"Open Ports Found: {len(open_ports)}")
 print(f"Scan Time: {end_time - start_time:.2f} seconds")
+print("Results saved to scan_results.csv")
+
+print("\nOpen Port Summary:")
+
+for port, service, banner in sorted(open_ports):
+    print(f"Port {port:<5} -> {service}")
