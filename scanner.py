@@ -1,14 +1,18 @@
 import socket
 
-target = input("Enter IP Address: ")
+target = input("Target IP: ")
+
+print("-" * 40)
+print(f"Scanning {target}")
+print("-" * 40)
 
 for port in range(1, 101):
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.settimeout(1)
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.settimeout(0.5)
 
-    result = s.connect_ex((target, port))
+    result = sock.connect_ex((target, port))
 
     if result == 0:
-        print(f"Port {port} is OPEN")
+        print(f"[+] Port {port} OPEN")
 
-    s.close()
+    sock.close()
