@@ -3,10 +3,10 @@ import csv
 import time
 from concurrent.futures import ThreadPoolExecutor
 
-# Get user input
+# Get target from user
 target = input("Enter IP Address or Hostname: ")
 
-# Resolve hostname to IP
+# Resolve hostname
 try:
     ip = socket.gethostbyname(target)
     print(f"\nHostname: {target}")
@@ -20,6 +20,8 @@ print(f"Scanning {target} ({ip})")
 print("-" * 60)
 
 open_ports = []
+
+# Start timer
 start_time = time.time()
 
 
@@ -80,19 +82,22 @@ with ThreadPoolExecutor(max_workers=100) as executor:
 # Save results to CSV
 with open("scan_results.csv", "w", newline="", encoding="utf-8") as file:
     writer = csv.writer(file)
+
     writer.writerow(["Port", "Service", "Banner"])
 
     for result in sorted(open_ports):
         writer.writerow(result)
 
+# End timer
 end_time = time.time()
+scan_duration = end_time - start_time
 
 print("\n" + "-" * 60)
 print("SCAN COMPLETE")
 print("-" * 60)
 
 print(f"Open Ports Found: {len(open_ports)}")
-print(f"Scan Time: {end_time - start_time:.2f} seconds")
+print(f"Scan Time: {scan_duration:.2f} seconds")
 print("Results saved to scan_results.csv")
 
 print("\nOpen Port Summary:")
