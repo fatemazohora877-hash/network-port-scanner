@@ -3,26 +3,7 @@ import csv
 import time
 from concurrent.futures import ThreadPoolExecutor
 
-# Get target from user
-target = input("Enter IP Address or Hostname: ")
-
-# Resolve hostname
-try:
-    ip = socket.gethostbyname(target)
-    print(f"\nHostname: {target}")
-    print(f"Resolved IP: {ip}")
-except socket.gaierror:
-    print("Error: Could not resolve hostname.")
-    exit()
-
-print("-" * 60)
-print(f"Scanning {target} ({ip})")
-print("-" * 60)
-
 open_ports = []
-
-# Start timer
-start_time = time.time()
 
 
 def grab_banner(ip, port):
@@ -43,7 +24,10 @@ def grab_banner(ip, port):
         return "No banner available"
 
     finally:
-        sock.close()
+        try:
+            sock.close()
+        except:
+            pass
 
 
 def scan_port(port):
@@ -57,7 +41,7 @@ def scan_port(port):
 
             try:
                 service = socket.getservbyport(port)
-            except:
+            except OSError:
                 service = "Unknown Service"
 
             banner = grab_banner(ip, port)
@@ -68,38 +52,64 @@ def scan_port(port):
 
             open_ports.append([port, service, banner[:100]])
 
-    except:
+    except socket.error:
         pass
 
     finally:
         sock.close()
 
 
-# Scan ports 1-1000
-with ThreadPoolExecutor(max_workers=100) as executor:
-    executor.map(scan_port, range(1, 1001))
+try:
+    target = input("Enter IP Address or Hostname: ")
 
-# Save results to CSV
-with open("scan_results.csv", "w", newline="", encoding="utf-8") as file:
-    writer = csv.writer(file)
+    try:
+        ip = socket.gethostbyname(target)
 
-    writer.writerow(["Port", "Service", "Banner"])
+        print(f"\nHostname: {target}")
+        print(f"Resolved IP: {ip}")
 
-    for result in sorted(open_ports):
-        writer.writerow(result)
+    except socket.gaierror:
+        print("Error: Could not resolve hostname.")
+        exit()
 
-# End timer
-end_time = time.time()
-scan_duration = end_time - start_time
+    print("-" * 60)
+    print(f"Scanning {target} ({ip})")
+    print("-" * 60)
 
-print("\n" + "-" * 60)
-print("SCAN COMPLETE")
-print("-" * 60)
+    start_time = time.time()
 
-print(f"Open Ports Found: {len(open_ports)}")
-print(f"Scan Time: {scan_duration:.2f} seconds")
-print("Results saved to scan_results.csv")
+    with ThreadPoolExecutor(max_workers=100) as executor:
+        executor.map(scan_port, range(1, 1001))
 
-print("\nOpen Port Summary:")
-for port, service, banner in sorted(open_ports):
-    print(f"Port {port:<5} -> {service}")
+    end_time = time.time()
+    scan_duration = end_time - start_time
+
+    with open("scan_results.csv", "w", newline="", encoding="utf-8") as file:
+        writer = csv.writer(file)
+
+        writer.writerow(["Port", "Service", "Banner"])
+
+        for result in sorted(open_ports):
+            writer.writerow(result)
+
+    print("\n" + "-" * 60)
+    print("SCAN COMPLETE")
+    print("-" * 60)
+
+    print(f"Open Ports Found: {len(open_ports)}")
+    print(f"Scan Time: {scan_duration:.2f} seconds")
+    print("Results saved to scan_results.csv")
+
+    if open_ports:
+        print("\nOpen Port Summary:")
+
+        for port, service, banner in sorted(open_ports):
+            print(f"Port {port:<5} -> {service}")
+    else:
+        print("No open ports found.")
+
+except KeyboardInterrupt:
+    print("\n\nScan interrupted by user.")
+
+except Exception as e:
+    print(f"\nUnexpected error: {e}")
